@@ -8760,6 +8760,15 @@ const DEKHO_PRIME = {
         },
         {
             "duration": -1,
+            "title": "Sony Sab",
+            "tvgId": "",
+            "tvgName": "Sony Sab",
+            "tvgLogo": "https://raw.githubusercontent.com/subirkumarpaul/Logo/56e54462053b1b278b80b532c89c01f17e360fd5/Sony%20Sab.jpeg",
+            "groupTitle": "Entertainment",
+            "url": "http://202.70.146.135:8000/play/a025/index.m3u8"
+        },
+        {
+            "duration": -1,
             "title": "Sony Pal",
             "tvgId": "",
             "tvgName": "Sony Pal",
