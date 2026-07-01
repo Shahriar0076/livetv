@@ -24,13 +24,11 @@ import useOnlineStatus from '../hooks/useOnlineStatus'
 
 const normalizeStreamUrl = (url = '') => {
   let normalized = url.replace(/&amp;/g, '&')
-  // Only upgrade to HTTPS when the page itself is served over HTTPS (to avoid
-  // Mixed Content errors). When on HTTP, keep the original protocol — some
-  // IPTV servers only support HTTP and the upgrade would break playback.
-  if (
-    normalized.startsWith('http://') &&
-    window.location.protocol === 'https:'
-  ) {
+  // Upgrade insecure HTTP stream URLs to HTTPS to avoid Mixed Content errors
+  // when the app is served over HTTPS (e.g. Vercel). Most IPTV servers support
+  // both protocols; if a server truly doesn't, the stream will still error
+  // gracefully and the user can hit Reconnect.
+  if (normalized.startsWith('http://')) {
     normalized = 'https://' + normalized.slice(7)
   }
   return normalized
