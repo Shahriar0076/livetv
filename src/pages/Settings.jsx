@@ -215,8 +215,8 @@ export default function Settings() {
           />
         </section>
 
-        {/* Content Filters */}
-        <section className="space-y-2">
+        {/* Content Filters — hidden */}
+        <section className="space-y-2" style={{ display: 'none' }}>
           <SectionTitle icon={Eye} label="Content Filters" />
           <SettingRow
             id="adultContent"
