@@ -33,6 +33,61 @@ async function checkChannel(url, signal) {
   }
 }
 
+function runClientCheck(controller, runRef, setManyLiveStatus, setLiveCheckProgress, storeSet) {
+  const currentRun = runRef.current
+  const channels = allChannels.filter((ch) => ch.url && !/\.(mp4|mkv|avi|webm|mov|flv|wmv|m4v|mpg|mpeg)$/i.test(ch.url))
+  const total = channels.length
+  const liveStatus = {}
+  let checked = 0
+  let nextIndex = 0
+  let lastFlush = 0
+  let flushCount = 0
+  const BATCH_SIZES = [5, 5, 50]
+
+  setLiveCheckProgress(0, total, true)
+
+  function flush() {
+    if (controller.signal.aborted) return
+    if (runRef.current !== currentRun) return
+    setManyLiveStatus(liveStatus)
+    setLiveCheckProgress(checked, total, checked < total)
+  }
+
+  async function worker() {
+    while (!controller.signal.aborted && runRef.current === currentRun) {
+      const index = nextIndex++
+      if (index >= total) break
+
+      const ch = channels[index]
+      if (!ch) break
+
+      const isLive = await checkChannel(ch.url, controller.signal)
+
+      if (controller.signal.aborted) return
+      if (runRef.current !== currentRun) return
+
+      liveStatus[ch.id] = isLive ? 'live' : 'dead'
+      checked++
+
+      const batchSize = BATCH_SIZES[flushCount] ?? 50
+      if (checked - lastFlush >= batchSize || checked === total) {
+        lastFlush = checked
+        flushCount++
+        flush()
+      }
+    }
+  }
+
+  const workers = Array.from({ length: CONCURRENCY }, () => worker())
+  Promise.allSettled(workers).then(() => {
+    if (runRef.current !== currentRun) return
+    if (!controller.signal.aborted) {
+      storeSet({ lastLiveCheckAt: Date.now() })
+      flush()
+    }
+  })
+}
+
 export default function useLiveChecker() {
   const lastLiveCheckAt = useTvStore((state) => state.lastLiveCheckAt)
   const liveCheckProgress = useTvStore((state) => state.liveCheckProgress)
@@ -40,10 +95,10 @@ export default function useLiveChecker() {
   const setLiveCheckProgress = useTvStore((state) => state.setLiveCheckProgress)
   const storeSet = useTvStore.setState
 
-  const runCounter = useRef(0)
+  const runRef = useRef(0)
 
   useEffect(() => {
-    const currentRun = ++runCounter.current
+    runRef.current++
     const controller = new AbortController()
 
     const now = Date.now()
@@ -51,60 +106,23 @@ export default function useLiveChecker() {
 
     if (!isStale) {
       setLiveCheckProgress(0, 0, false)
-      return
+      return () => controller.abort()
     }
 
-    const channels = allChannels.filter((ch) => ch.url && !/\.(mp4|mkv|avi|webm|mov|flv|wmv|m4v|mpg|mpeg)$/i.test(ch.url))
-    const total = channels.length
-    const liveStatus = {}
-    let checked = 0
-    let nextIndex = 0
-    let lastFlush = 0
-    let flushCount = 0
-    const BATCH_SIZES = [5, 5, 50]
+    setLiveCheckProgress(0, 1, true)
 
-    setLiveCheckProgress(0, total, true)
-
-    function flush() {
-      if (controller.signal.aborted) return
-      if (runCounter.current !== currentRun) return
-      setManyLiveStatus(liveStatus)
-      setLiveCheckProgress(checked, total, checked < total)
-    }
-
-    async function worker() {
-      while (!controller.signal.aborted && runCounter.current === currentRun) {
-        const index = nextIndex++
-        if (index >= total) break
-
-        const ch = channels[index]
-        if (!ch) break
-
-        const isLive = await checkChannel(ch.url, controller.signal)
-
+    fetch('/api/channel-status')
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => {
+        if (!data?.statuses || !data?.checkedAt) throw new Error('Invalid server data')
+        setManyLiveStatus(data.statuses)
+        storeSet({ lastLiveCheckAt: data.checkedAt })
+        setLiveCheckProgress(0, 0, false)
+      })
+      .catch(() => {
         if (controller.signal.aborted) return
-        if (runCounter.current !== currentRun) return
-
-        liveStatus[ch.id] = isLive ? 'live' : 'dead'
-        checked++
-
-        const batchSize = BATCH_SIZES[flushCount] ?? 50
-        if (checked - lastFlush >= batchSize || checked === total) {
-          lastFlush = checked
-          flushCount++
-          flush()
-        }
-      }
-    }
-
-    const workers = Array.from({ length: CONCURRENCY }, () => worker())
-    Promise.allSettled(workers).then(() => {
-      if (runCounter.current !== currentRun) return
-      if (!controller.signal.aborted) {
-        storeSet({ lastLiveCheckAt: Date.now() })
-        flush()
-      }
-    })
+        runClientCheck(controller, runRef, setManyLiveStatus, setLiveCheckProgress, storeSet)
+      })
 
     return () => {
       controller.abort()
