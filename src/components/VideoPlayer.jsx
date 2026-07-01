@@ -23,42 +23,17 @@ import { useTvStore } from '../store/tvStore'
 import useOnlineStatus from '../hooks/useOnlineStatus'
 
 const normalizeStreamUrl = (url = '') => {
-  return url.replace(/&amp;/g, '&')
-}
-
-// On HTTPS pages, wrap HTTP stream URLs through a same-origin proxy to
-// avoid Mixed Content blocking. The custom loader rewrites all hls.js
-// requests (playlist + segments) to go through /api/proxy, and restores
-// the original URL in responses so hls.js resolves relative paths correctly.
-const PROXY_PREFIX = '/.netlify/functions/proxy?url='
-
-function createProxyLoader(BaseLoader) {
-  function ProxyLoader(config) {
-    this._loader = new BaseLoader(config)
+  let normalized = url.replace(/&amp;/g, '&')
+  // Only upgrade to HTTPS when the page itself is served over HTTPS (to avoid
+  // Mixed Content errors). When on HTTP, keep the original protocol — some
+  // IPTV servers only support HTTP and the upgrade would break playback.
+  if (
+    normalized.startsWith('http://') &&
+    window.location.protocol === 'https:'
+  ) {
+    normalized = 'https://' + normalized.slice(7)
   }
-  ProxyLoader.prototype.load = function (context, config, callbacks) {
-    const originalUrl = context.url
-    if (
-      originalUrl &&
-      originalUrl.startsWith('http://') &&
-      window.location.protocol === 'https:'
-    ) {
-      context.url = PROXY_PREFIX + encodeURIComponent(originalUrl)
-    }
-    const originalOnSuccess = callbacks.onSuccess
-    callbacks.onSuccess = function (response, stats, ctx, networkDetails) {
-      response.url = originalUrl
-      originalOnSuccess.call(this, response, stats, ctx, networkDetails)
-    }
-    this._loader.load(context, config, callbacks)
-  }
-  ProxyLoader.prototype.abort = function () {
-    this._loader.abort()
-  }
-  ProxyLoader.prototype.destroy = function () {
-    this._loader.destroy()
-  }
-  return ProxyLoader
+  return normalized
 }
 
 const buildQualityOptions = (levels = []) => {
@@ -334,9 +309,6 @@ export default function VideoPlayer({ channel, onNext, onPrevious, onBack }) {
       const effectiveConfig = settings.prebuffer
         ? { ...HLS_CONFIG, ...PREBUFFER_OVERRIDES }
         : HLS_CONFIG
-      if (window.location.protocol === 'https:') {
-        effectiveConfig.loader = createProxyLoader(Hls.DefaultConfig.loader)
-      }
       const hls = new Hls(effectiveConfig)
       hlsRef.current = hls
 
