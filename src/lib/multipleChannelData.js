@@ -233,9 +233,9 @@ const CODE_CLOUD_BD = {
         },
         {
             "duration": -1,
-            "title": "SONY SAB HD",
+            "title": "Sony SAB HD",
             "tvgId": "sonysab_hd",
-            "tvgName": "SONY SAB HD VIP",
+            "tvgName": "Sony SAB HD",
             "tvgLogo": "https://images.toffeelive.com/images/program/2420/logo/240x240/mobile_logo_688156001666785674.png",
             "groupTitle": "General",
             "url": "https://mflixott.com/tv/toffee-by-maruf/live.php?id=sonysab_hd&e=.m3u8"
@@ -3384,9 +3384,9 @@ const MRGIFY_TV = {
         },
         {
             "duration": -1,
-            "title": "w_300,q_85/ES55-JQBv9knK3AHNDWC/posters/13411be9-62b9-4a99-a062-b6e91dfb1099.webp\",[BD] Sony SAB HD",
-            "tvgId": "",
-            "tvgName": "w_300,q_85/ES55-JQBv9knK3AHNDWC/posters/13411be9-62b9-4a99-a062-b6e91dfb1099.webp\",[BD] Sony SAB HD",
+            "title": "Sony SAB HD",
+            "tvgId": "sonysab-hd",
+            "tvgName": "Sony SAB HD",
             "tvgLogo": "https://assets-prod.services.toffeelive.com/f_png,w_300,q_85/ES55-JQBv9knK3AHNDWC/posters/13411be9-62b9-4a99-a062-b6e91dfb1099.webp",
             "groupTitle": "General",
             "url": "https://bldcmprod-cdn.toffeelive.com/cdn/live/sonysab_hd/playlist.m3u8"
@@ -8747,7 +8747,7 @@ const DEKHO_PRIME = {
             "tvgName": "Sony Sab",
             "tvgLogo": "https://raw.githubusercontent.com/subirkumarpaul/Logo/56e54462053b1b278b80b532c89c01f17e360fd5/Sony%20Sab.jpeg",
             "groupTitle": "Entertainment",
-            "url": "http://103.161.153.165:8000/play/a03r/index.m3u8"
+            "url": "http://202.70.146.135:8000/play/a025/index.m3u8"
         },
         {
             "duration": -1,
