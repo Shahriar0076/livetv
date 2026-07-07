@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Search as SearchIcon } from 'lucide-react'
 import allChannels from '../lib/allChannels'
 import { useTvStore } from '../store/tvStore'
+import useScrollRestore from '../hooks/useScrollRestore'
 import ChannelGrid from '../components/ChannelGrid'
 import SearchBar from '../components/SearchBar'
 import CategoryFilter from '../components/CategoryFilter'
@@ -12,6 +13,7 @@ const safeChannels = allChannels.filter((ch) => !ch.isAdult)
 const allWithAdult = allChannels
 
 export default function Search() {
+  useScrollRestore()
   const [query, setQuery] = useState('')
   const adultEnabled = useTvStore((state) => state.settings.adultContentEnabled)
   const liveStatus = useTvStore((state) => state.liveStatus)

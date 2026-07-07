@@ -1,0 +1,11 @@
+# .graphifyignore — files and directories to exclude from the knowledge graph
+#
+# Syntax follows gitignore rules (last-match-wins).
+# Graphify also reads .gitignore automatically; entries here exclude
+# things that are tracked in git but aren't architecturally meaningful.
+
+# Static assets — icons, images, logos not relevant to code architecture
+public/
+
+# Large data files — not code architecture
+scripts/channel_results.json

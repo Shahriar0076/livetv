@@ -3,11 +3,13 @@ import { Link, useParams } from 'react-router-dom'
 import { Grid3X3, Search } from 'lucide-react'
 import { channelsByCategory } from '../lib/allChannels'
 import { useTvStore } from '../store/tvStore'
+import useScrollRestore from '../hooks/useScrollRestore'
 import ChannelGrid from '../components/ChannelGrid'
 import CategoryFilter from '../components/CategoryFilter'
 import Seo from '../components/Seo'
 
 export default function Category() {
+  useScrollRestore()
   const { name = '' } = useParams()
   const category = decodeURIComponent(name)
   const adultEnabled = useTvStore((state) => state.settings.adultContentEnabled)

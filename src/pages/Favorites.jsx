@@ -2,11 +2,13 @@ import { useMemo } from 'react'
 import { Heart } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { byIds } from '../lib/allChannels'
-import ChannelGrid from '../components/ChannelGrid'
 import { useTvStore } from '../store/tvStore'
+import useScrollRestore from '../hooks/useScrollRestore'
+import ChannelGrid from '../components/ChannelGrid'
 import Seo from '../components/Seo'
 
 export default function Favorites() {
+  useScrollRestore()
   const favoriteIds = useTvStore((state) => state.favoriteIds)
   const liveStatus = useTvStore((state) => state.liveStatus)
   const liveCheckVersion = useTvStore((state) => state.liveCheckVersion)

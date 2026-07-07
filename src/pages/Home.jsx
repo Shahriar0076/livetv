@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Clock3, Heart, Play, RadioTower, Sparkles, Tv2 } from 'lucide-react'
 import allChannels, { byIds, allCategories, channelIndex } from '../lib/allChannels'
 import { useTvStore } from '../store/tvStore'
+import useScrollRestore from '../hooks/useScrollRestore'
 import ChannelCard from '../components/ChannelCard'
 import ChannelGrid from '../components/ChannelGrid'
 import SearchBar from '../components/SearchBar'
@@ -42,6 +43,7 @@ function StatPill({ label, value, gradient }) {
 }
 
 export default function Home() {
+  useScrollRestore()
   const [query, setQuery] = useState('')
   const favoriteIds = useTvStore((state) => state.favoriteIds)
   const recentlyWatchedIds = useTvStore((state) => state.recentlyWatchedIds)
