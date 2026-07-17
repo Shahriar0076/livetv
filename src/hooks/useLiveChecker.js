@@ -22,26 +22,40 @@ async function readWithTimeout(reader, ms) {
 
 async function checkChannel(url, signal) {
   try {
-    const timeoutSignal = AbortSignal.timeout(TIMEOUT_MS)
-    const combined = AbortSignal.any
-      ? AbortSignal.any([signal, timeoutSignal])
-      : timeoutSignal
-    const response = await fetch(url, {
-      method: 'GET',
-      mode: 'cors',
-      signal: combined,
-    })
-    if (!response.ok) return false
-    const ct = response.headers.get('content-type') || ''
-    if (ct.includes('audio') || ct.includes('video')) return true
-    if (ct.includes('mpegurl') || ct.includes('x-mpegURL') || ct.includes('vnd.apple.mpegurl')) return true
-    const reader = response.body?.getReader()
-    if (!reader) return false
-    const { value, done } = await readWithTimeout(reader, READ_TIMEOUT_MS)
-    reader.cancel()
-    if (done || !value) return false
-    const head = new TextDecoder().decode(value.slice(0, 512))
-    return head.includes('#EXTM3U') || head.includes('#EXTINF')
+    // Use a manual AbortController + setTimeout instead of AbortSignal.timeout
+    // and AbortSignal.any, which are not supported on many mobile browsers.
+    // This prevents the entire batch freezing when fetch() can't reach a server.
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+
+    // Forward parent abort so cleanup on unmount still works
+    const onParentAbort = () => controller.abort()
+    if (signal) signal.addEventListener('abort', onParentAbort, { once: true })
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        mode: 'cors',
+        signal: controller.signal,
+      })
+      if (!response.ok) return false
+
+      const ct = response.headers.get('content-type') || ''
+      if (ct.includes('audio') || ct.includes('video')) return true
+      if (ct.includes('mpegurl') || ct.includes('x-mpegURL') || ct.includes('vnd.apple.mpegurl')) return true
+
+      const reader = response.body?.getReader()
+      if (!reader) return false
+
+      const { value, done } = await readWithTimeout(reader, READ_TIMEOUT_MS)
+      reader.cancel()
+      if (done || !value) return false
+      const head = new TextDecoder().decode(value.slice(0, 512))
+      return head.includes('#EXTM3U') || head.includes('#EXTINF')
+    } finally {
+      clearTimeout(timer)
+      if (signal) signal.removeEventListener('abort', onParentAbort)
+    }
   } catch {
     return false
   }
