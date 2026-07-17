@@ -4,7 +4,21 @@ import allChannels from '../lib/allChannels'
 
 const CONCURRENCY = 25
 const TIMEOUT_MS = 5000
+const READ_TIMEOUT_MS = 3000
 const STALE_AFTER_MS = 24 * 60 * 60 * 1000
+
+async function readWithTimeout(reader, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reader.cancel()
+      reject(new Error('Read timeout'))
+    }, ms)
+    reader.read().then(
+      (v) => { clearTimeout(timer); resolve(v) },
+      (e) => { clearTimeout(timer); reject(e) },
+    )
+  })
+}
 
 async function checkChannel(url, signal) {
   try {
@@ -23,7 +37,7 @@ async function checkChannel(url, signal) {
     if (ct.includes('mpegurl') || ct.includes('x-mpegURL') || ct.includes('vnd.apple.mpegurl')) return true
     const reader = response.body?.getReader()
     if (!reader) return false
-    const { value, done } = await reader.read()
+    const { value, done } = await readWithTimeout(reader, READ_TIMEOUT_MS)
     reader.cancel()
     if (done || !value) return false
     const head = new TextDecoder().decode(value.slice(0, 512))
